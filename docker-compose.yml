@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # 1. Database (Postgres with Vector Extension)
+  db:
+    image: ankane/pgvector:latest
+    container_name: securedoc-db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: securedoc
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # 2. Local AI Engine (Ollama)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: securedoc-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_storage:/root/.ollama
+    # Enable GPU support if available (Uncomment for NVIDIA GPU)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    restart: unless-stopped
+
+  # 3. Database Admin Tool
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: securedoc-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  ollama_storage:
