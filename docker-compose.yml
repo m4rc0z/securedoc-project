@@ -46,6 +46,20 @@ services:
       - db
     restart: unless-stopped
 
+  # 4. AI Worker Service (Python)
+  ai-service:
+    build: ./backend-python
+    container_name: securedoc-ai
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   ollama_storage:
