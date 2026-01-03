@@ -14,7 +14,7 @@ class AIService:
 
     @classmethod
     def initialize(cls):
-        """Load heavy models on startup"""
+        """Pre-load the heavy AI models so they are ready."""
         logger.info(f"Loading embedding model: {settings.embedding_model_name}...")
         try:
             cls._embedding_model = SentenceTransformer(settings.embedding_model_name)
@@ -32,7 +32,7 @@ class AIService:
             raise RuntimeError("Embedding model is not initialized")
         
         try:
-            # Check for empty input to fail fast
+            # Check for bad input
             if not text.strip():
                 raise ValueError("Input text cannot be empty")
                 
