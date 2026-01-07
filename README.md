@@ -19,10 +19,9 @@ graph TD
     Frontend -->|REST API| Backend[Spring Boot Core]
     
     subgraph "Secure Zone (Local Network)"
-        Backend -->|Manage Data| DB[(PostgreSQL + pgvector)]
-        Backend -->|Ask AI| AIService[Python AI Service]
+        Backend -->|Store & Search Vectors| DB[(PostgreSQL + pgvector)]
+        Backend -->|Embed & Chat| AIService[Python AI Service]
         AIService -->|Run Model| Ollama[Ollama LLM Engine]
-        AIService -->|Search Vectors| DB
     end
 ```
 
@@ -30,15 +29,15 @@ graph TD
 
 ### Backend (The Boss)
 - **Framework**: Spring Boot 3.x (Java 17+)
-- **Job**: Manages files, security, and talks to the frontend.
+- **Job**: Orchestrates everything. Manages users, files, and the database (Postgres). It calls the AI Worker for calculations but keeps the state itself.
 
 ### AI Worker (The Brain)
 - **Framework**: Python FastAPI
-- **Job**: Converts text into numbers (vectors) and talks to the AI model.
+- **Job**: Stateless Compute Unit. Converts text into vectors and interfaces with the LLM. It has NO direct database access.
 
 ### Database (The Memory)
 - **System**: PostgreSQL 16 with `pgvector`
-- **Job**: Saves your documents and helps find the right text quickly.
+- **Job**: Stores documents and vectors. Managed exclusively by the Java Backend.
 
 ### Frontend (The Face)
 - **Framework**: Angular 16+

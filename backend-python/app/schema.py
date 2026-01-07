@@ -1,11 +1,27 @@
-from sqlalchemy import Column, Integer, String, Text
-from pgvector.sqlalchemy import Vector
-from .database import Base
+from typing import List
+from pydantic import BaseModel, Field
 
-class DocumentChunk(Base):
-    __tablename__ = "document_chunks"
+class EmbedRequest(BaseModel):
+    text: str = Field(..., min_length=1, description="The text to verify")
 
-    id = Column(Integer, primary_key=True, index=True)
-    source_file = Column(String, index=True)  # Filename to filter by document
-    content = Column(Text)                    # The actual text chunk
-    embedding = Column(Vector(384))           # Embeddings (MiniLM has 384 dims)
+class EmbedResponse(BaseModel):
+    embedding: List[float]
+
+class RAGRequest(BaseModel):
+    question: str = Field(..., min_length=1)
+    context: str = Field(..., min_length=1)
+
+class RAGResponse(BaseModel):
+    answer: str
+
+class IngestRequest(BaseModel):
+    text: str
+    metadata: dict = {}
+
+class ChunkData(BaseModel):
+    content: str
+    embedding: List[float]
+    metadata: dict = {}
+
+class IngestResponse(BaseModel):
+    chunks: List[ChunkData]

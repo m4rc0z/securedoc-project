@@ -27,4 +27,6 @@ build/
 
 # Docker / Project specific
 postgres_data/
-ollama_storage/
+ollama_data/
+pdfs/
+vector.txt

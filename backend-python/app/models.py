@@ -13,3 +13,27 @@ class RAGRequest(BaseModel):
 
 class RAGResponse(BaseModel):
     answer: str
+
+class IngestRequest(BaseModel):
+    text: str
+    metadata: dict = {}
+
+class ChunkData(BaseModel):
+    content: str
+    embedding: List[float]
+    metadata: dict = {}
+
+class IngestResponse(BaseModel):
+    chunks: List[ChunkData]
+
+class RerankRequest(BaseModel):
+    query: str = Field(..., min_length=1)
+    documents: List[str] = Field(..., min_length=1)
+    top_k: int = 5
+
+class ScoredDocument(BaseModel):
+    content: str
+    score: float
+
+class RerankResponse(BaseModel):
+    results: List[ScoredDocument]

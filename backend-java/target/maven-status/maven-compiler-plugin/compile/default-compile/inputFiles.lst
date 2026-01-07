@@ -1,0 +1,12 @@
+/Users/marco/dev/ai/projects/n8n/private-rag/securedoc-project/backend-java/src/main/java/com/securedoc/backend/repository/DocumentChunkRepository.java
+/Users/marco/dev/ai/projects/n8n/private-rag/securedoc-project/backend-java/src/main/java/com/securedoc/backend/service/PdfService.java
+/Users/marco/dev/ai/projects/n8n/private-rag/securedoc-project/backend-java/src/main/java/com/securedoc/backend/service/ChatService.java
+/Users/marco/dev/ai/projects/n8n/private-rag/securedoc-project/backend-java/src/main/java/com/securedoc/backend/repository/ChunkProjection.java
+/Users/marco/dev/ai/projects/n8n/private-rag/securedoc-project/backend-java/src/main/java/com/securedoc/backend/controller/UploadController.java
+/Users/marco/dev/ai/projects/n8n/private-rag/securedoc-project/backend-java/src/main/java/com/securedoc/backend/dto/ChatRequest.java
+/Users/marco/dev/ai/projects/n8n/private-rag/securedoc-project/backend-java/src/main/java/com/securedoc/backend/model/DocumentChunk.java
+/Users/marco/dev/ai/projects/n8n/private-rag/securedoc-project/backend-java/src/main/java/com/securedoc/backend/SecureDocApplication.java
+/Users/marco/dev/ai/projects/n8n/private-rag/securedoc-project/backend-java/src/main/java/com/securedoc/backend/controller/HealthController.java
+/Users/marco/dev/ai/projects/n8n/private-rag/securedoc-project/backend-java/src/main/java/com/securedoc/backend/controller/ChatController.java
+/Users/marco/dev/ai/projects/n8n/private-rag/securedoc-project/backend-java/src/main/java/com/securedoc/backend/dto/ChatResponse.java
+/Users/marco/dev/ai/projects/n8n/private-rag/securedoc-project/backend-java/src/main/java/com/securedoc/backend/client/AIServiceClient.java
