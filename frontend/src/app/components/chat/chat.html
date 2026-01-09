@@ -2,32 +2,39 @@
     <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">SecureDoc Chat</h2>
 
     <div class="flex-1 overflow-y-auto mb-4 space-y-4 p-2 bg-gray-50 rounded">
-        <div *ngFor="let msg of messages"
-            [ngClass]="{'justify-end': msg.sender === 'user', 'justify-start': msg.sender === 'bot'}" class="flex">
+        @for (msg of messages(); track $index) {
+        <div [ngClass]="{'justify-end': msg.sender === 'user', 'justify-start': msg.sender === 'bot'}" class="flex">
             <div [ngClass]="{'bg-blue-600 text-white': msg.sender === 'user', 'bg-gray-200 text-gray-800': msg.sender === 'bot'}"
                 class="max-w-[80%] rounded-lg px-4 py-2 shadow">
                 <p>{{ msg.text }}</p>
-                <div *ngIf="msg.sources" class="mt-2 pt-2 border-t border-gray-300/50 text-xs">
+                @if (msg.sources) {
+                <div class="mt-2 pt-2 border-t border-gray-300/50 text-xs">
                     <p class="font-semibold">Sources:</p>
                     <ul class="list-disc pl-4">
-                        <li *ngFor="let source of msg.sources">{{ source }}</li>
+                        @for (source of msg.sources; track $index) {
+                        <li>{{ source }}</li>
+                        }
                     </ul>
                 </div>
+                }
             </div>
         </div>
+        }
 
-        <div *ngIf="loading" class="flex justify-start">
+        @if (loading()) {
+        <div class="flex justify-start">
             <div class="bg-gray-100 text-gray-500 rounded-lg px-4 py-2 animate-pulse">
                 Thinking...
             </div>
         </div>
+        }
     </div>
 
     <div class="flex gap-2">
-        <input [(ngModel)]="question" (keyup.enter)="sendMessage()" [disabled]="loading"
-            placeholder="Ask a question about your documents..."
+        <input [ngModel]="question()" (ngModelChange)="question.set($event)" (keyup.enter)="sendMessage()"
+            [disabled]="loading()" placeholder="Ask a question about your documents..."
             class="flex-1 border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600" />
-        <button (click)="sendMessage()" [disabled]="!question.trim() || loading"
+        <button (click)="sendMessage()" [disabled]="!question().trim() || loading()"
             class="bg-blue-600 text-white font-bold py-2 px-6 rounded hover:bg-blue-700 disabled:opacity-50 transition">
             Send
         </button>

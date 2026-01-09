@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../services/api';
 
@@ -10,34 +10,35 @@ import { ApiService } from '../../services/api';
   styleUrl: './upload.css'
 })
 export class UploadComponent {
-  selectedFile: File | null = null;
-  uploading = false;
-  message = '';
-  error = false;
+  private api = inject(ApiService);
 
-  constructor(private api: ApiService) { }
+  selectedFile = signal<File | null>(null);
+  uploading = signal(false);
+  message = signal('');
+  error = signal(false);
 
   onFileSelected(event: any) {
-    this.selectedFile = event.target.files[0];
+    this.selectedFile.set(event.target.files[0]);
   }
 
   upload() {
-    if (!this.selectedFile) return;
+    const file = this.selectedFile();
+    if (!file) return;
 
-    this.uploading = true;
-    this.message = '';
-    this.error = false;
+    this.uploading.set(true);
+    this.message.set('');
+    this.error.set(false);
 
-    this.api.uploadDocument(this.selectedFile).subscribe({
+    this.api.uploadDocument(file).subscribe({
       next: (response) => {
-        this.uploading = false;
-        this.message = 'Upload successful!';
-        this.selectedFile = null;
+        this.uploading.set(false);
+        this.message.set('Upload successful!');
+        this.selectedFile.set(null);
       },
       error: (err) => {
-        this.uploading = false;
-        this.error = true;
-        this.message = 'Upload failed. Please try again.';
+        this.uploading.set(false);
+        this.error.set(true);
+        this.message.set('Upload failed. Please try again.');
         console.error(err);
       }
     });

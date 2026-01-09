@@ -7,6 +7,7 @@ com/securedoc/backend/client/AIServiceClient$RAGRequest.class
 com/securedoc/backend/repository/ChunkProjection.class
 com/securedoc/backend/client/AIServiceClient$IngestRequest.class
 com/securedoc/backend/dto/ChatRequest.class
+com/securedoc/backend/model/DocumentChunk$DocumentChunkBuilder.class
 com/securedoc/backend/client/AIServiceClient$EmbedResponse.class
 com/securedoc/backend/client/AIServiceClient$EmbedRequest.class
 com/securedoc/backend/controller/HealthController.class

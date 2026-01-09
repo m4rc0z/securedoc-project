@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService, ChatResponse } from '../../services/api';
@@ -17,32 +17,33 @@ interface Message {
   styleUrl: './chat.css'
 })
 export class ChatComponent {
-  messages: Message[] = [];
-  question = '';
-  loading = false;
+  private api = inject(ApiService);
 
-  constructor(private api: ApiService) { }
+  messages = signal<Message[]>([]);
+  question = signal('');
+  loading = signal(false);
 
   sendMessage() {
-    if (!this.question.trim()) return;
+    const currentQuestion = this.question();
+    if (!currentQuestion.trim()) return;
 
-    const userQuestion = this.question;
-    this.messages.push({ text: userQuestion, sender: 'user' });
-    this.question = '';
-    this.loading = true;
+    // Optimistic Update
+    this.messages.update(msgs => [...msgs, { text: currentQuestion, sender: 'user' }]);
+    this.question.set('');
+    this.loading.set(true);
 
-    this.api.chat(userQuestion).subscribe({
+    this.api.chat(currentQuestion).subscribe({
       next: (response: ChatResponse) => {
-        this.messages.push({
+        this.messages.update(msgs => [...msgs, {
           text: response.answer,
           sender: 'bot',
           sources: response.sources
-        });
-        this.loading = false;
+        }]);
+        this.loading.set(false);
       },
       error: (err) => {
-        this.messages.push({ text: 'Error: Could not get response.', sender: 'bot' });
-        this.loading = false;
+        this.messages.update(msgs => [...msgs, { text: 'Error: Could not get response.', sender: 'bot' }]);
+        this.loading.set(false);
         console.error(err);
       }
     });

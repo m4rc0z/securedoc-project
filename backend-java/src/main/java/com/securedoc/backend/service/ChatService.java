@@ -5,21 +5,20 @@ import com.securedoc.backend.dto.ChatRequest;
 import com.securedoc.backend.dto.ChatResponse;
 import com.securedoc.backend.repository.ChunkProjection;
 import com.securedoc.backend.repository.DocumentChunkRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
+@RequiredArgsConstructor
 public class ChatService {
 
     private final AIServiceClient aiClient;
     private final DocumentChunkRepository chunkRepository;
-
-    public ChatService(AIServiceClient aiClient, DocumentChunkRepository chunkRepository) {
-        this.aiClient = aiClient;
-        this.chunkRepository = chunkRepository;
-    }
 
     public ChatResponse chat(ChatRequest request) {
         System.out.println("Step 1: Embedding question...");

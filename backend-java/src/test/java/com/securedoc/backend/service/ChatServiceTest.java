@@ -36,7 +36,7 @@ public class ChatServiceTest {
     public void testChat() {
         // Arrange
         String question = "What is the secret?";
-        ChatRequest request = new ChatRequest(question);
+        ChatRequest request = new ChatRequest(question, null);
 
         // Mock Embedding
         List<Float> embedding = List.of(0.1f, 0.2f, 0.3f);

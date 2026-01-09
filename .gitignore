@@ -11,6 +11,9 @@ env/
 # Distribution / Packaging
 dist/
 build/
+target/
+node_modules/
+.angular/
 *.egg-info/
 
 # Jupyter Notebook
