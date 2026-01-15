@@ -22,27 +22,19 @@ services:
       - securedoc-network
     restart: unless-stopped
 
-  # 2. Local AI Engine (Ollama)
-  ollama:
-    image: ollama/ollama:latest
-    container_name: securedoc-ollama
+  # 3. Vector Database (Qdrant)
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: securedoc-qdrant
     ports:
-      - "11434:11434"
+      - "6333:6333"
     volumes:
-      - ./ollama_data:/root/.ollama
+      - qdrant_data:/qdrant/storage
     networks:
       - securedoc-network
-    # Enable GPU support if available (Uncomment for NVIDIA GPU)
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
     restart: unless-stopped
 
-  # 3. Database Admin Tool
+  # 4. Database Admin Tool
   pgadmin:
     image: dpage/pgadmin4
     container_name: securedoc-pgadmin
@@ -57,6 +49,24 @@ services:
       - securedoc-network
     restart: unless-stopped
 
+  # 5. Core API Backend (Java Spring Boot)
+  backend-java:
+    build: ./backend-java
+    container_name: securedoc-backend
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/securedoc
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=secretpassword
+      - AI_SERVICE_URL=http://ai-service:8000
+    depends_on:
+      - db
+      - ai-service
+    networks:
+      - securedoc-network
+    restart: unless-stopped
+
   # 4. AI Worker Service (Python)
   ai-service:
     build: ./backend-python
@@ -64,12 +74,16 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
     depends_on:
-      - ollama
+      - db
+      - qdrant
     networks:
       - securedoc-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
 volumes:
   postgres_data:
+  qdrant_data:

@@ -2,6 +2,7 @@ import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService, ChatResponse } from '../../services/api';
+import { MarkdownPipe } from '../../pipes/markdown.pipe';
 
 interface Message {
   text: string;
@@ -12,7 +13,7 @@ interface Message {
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MarkdownPipe],
   templateUrl: './chat.html',
   styleUrl: './chat.css'
 })

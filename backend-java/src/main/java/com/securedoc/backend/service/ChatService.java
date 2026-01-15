@@ -21,28 +21,53 @@ public class ChatService {
     private final DocumentChunkRepository chunkRepository;
 
     public ChatResponse chat(ChatRequest request) {
-        System.out.println("Step 1: Embedding question...");
-        // 1. Embed the question
-        var embeddingResponse = aiClient.embed(request.question());
-        System.out.println("Step 1: Done. Vector generated.");
+        log.debug("Processing chat request for query: {}", request.question());
 
-        // 2. Find relevant chunks (RAG)
-        System.out.println("Step 2: Searching DB for context...");
+        // 1. Plan the query (Python Agent)
+        var plan = aiClient.plan(request.question());
+        String effectiveQuestion = plan.rewrittenQuestion();
+        String intent = plan.intent();
+        log.info("Query Plan - Intent: {}, Rewritten: {}", intent, effectiveQuestion);
+
+        // 2. Embed the effective question (better semantic match)
+        var embeddingResponse = aiClient.embed(effectiveQuestion);
         String vectorString = embeddingResponse.getAsVector().toString();
-        List<ChunkProjection> chunks = chunkRepository.findNearest(vectorString, 5);
-        System.out.println("Step 2: Done. Found " + chunks.size() + " chunks.");
 
-        // 3. Prepare Context
-        // 3. Prepare Context
+        // 3. Find relevant chunks (RAG) with Filters
+        log.debug("Executing vector search...");
+        List<ChunkProjection> chunks;
+        try {
+            String filtersJson = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(plan.filters());
+            // If filters are empty map, JSON is "{}", which works with our query logic
+            chunks = chunkRepository.findNearestWithFilters(vectorString, filtersJson, 10);
+        } catch (Exception e) {
+            log.warn("Filter serialization failed, falling back to unfiltered search: {}", e.getMessage());
+            chunks = chunkRepository.findNearest(vectorString, 10);
+        }
+        log.info("Retrieved {} chunks from database.", chunks.size());
+
+        // 4. Prepare Context (Deduplicate chunks)
         String context = chunks.stream()
                 .map(ChunkProjection::getContent)
+                .distinct()
                 .collect(Collectors.joining("\n---\n"));
 
-        // 4. Ask LLM
-        System.out.println("Step 4: Calling LLM (this may take time)...");
-        var ragResponse = aiClient.ask(request.question(), context);
-        System.out.println("Step 4: LLM responded.");
+        // 5. Ask LLM (using effective question)
+        log.debug("Calling AI Service for generation...");
+        var ragResponse = aiClient.ask(effectiveQuestion, context);
+        log.info("AI Service responded successfully.");
 
-        return new ChatResponse(ragResponse.answer(), List.of("Source: Internal DB (Top 5 Matches)"));
+        // Dynamic Sources
+        List<String> sources = chunks.stream()
+                .map(c -> "📄 " + c.getSourceFile())
+                .distinct()
+                .limit(5)
+                .collect(Collectors.toList());
+
+        if (sources.isEmpty()) {
+            sources.add("Internal Knowledge Base");
+        }
+
+        return new ChatResponse(ragResponse.answer(), sources);
     }
 }

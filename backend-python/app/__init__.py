@@ -1,7 +1,7 @@
 # This file makes the 'app' directory a Python package
 
 # Facade Export
-from .models import EmbedRequest, EmbedResponse, IngestRequest, IngestResponse, RAGRequest, RAGResponse, ChunkData, RerankRequest, RerankResponse
+from .models import EmbedRequest, EmbedResponse, IngestRequest, IngestResponse, RAGRequest, RAGResponse, ChunkData, RerankRequest, RerankResponse, PlanRequest, PlanResponse
 from .services import AIService
 
 __all__ = [
@@ -14,5 +14,7 @@ __all__ = [
     "ChunkData",
     "RerankRequest",
     "RerankResponse",
+    "PlanRequest",
+    "PlanResponse",
     "AIService"
 ]

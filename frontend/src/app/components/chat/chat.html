@@ -6,7 +6,7 @@
         <div [ngClass]="{'justify-end': msg.sender === 'user', 'justify-start': msg.sender === 'bot'}" class="flex">
             <div [ngClass]="{'bg-blue-600 text-white': msg.sender === 'user', 'bg-gray-200 text-gray-800': msg.sender === 'bot'}"
                 class="max-w-[80%] rounded-lg px-4 py-2 shadow">
-                <p>{{ msg.text }}</p>
+                <div [innerHTML]="msg.text | markdown"></div>
                 @if (msg.sources) {
                 <div class="mt-2 pt-2 border-t border-gray-300/50 text-xs">
                     <p class="font-semibold">Sources:</p>

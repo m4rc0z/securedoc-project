@@ -58,6 +58,15 @@ public class AIServiceClient {
                 .body(RAGResponse.class);
     }
 
+    public PlanResponse plan(String question) {
+        return restClient.post()
+                .uri("/plan")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new PlanRequest(question))
+                .retrieve()
+                .body(PlanResponse.class);
+    }
+
     // DTOs
     public record IngestRequest(String text, Map<String, Object> metadata) {
     }
@@ -83,7 +92,8 @@ public class AIServiceClient {
     public record RAGResponse(String answer) {
     }
 
-    public record IngestResponse(List<ChunkData> chunks) {
+    public record IngestResponse(@JsonProperty("document_metadata") Map<String, Object> documentMetadata,
+            List<ChunkData> chunks) {
     }
 
     public record ChunkData(String content, List<Float> embedding, Map<String, Object> metadata) {
@@ -97,5 +107,15 @@ public class AIServiceClient {
             }
             return new PGvector(floats);
         }
+    }
+
+    public record PlanRequest(String question) {
+    }
+
+    public record PlanResponse(
+            @JsonProperty("original_question") String originalQuestion,
+            @JsonProperty("rewritten_question") String rewrittenQuestion,
+            String intent,
+            Map<String, Object> filters) {
     }
 }

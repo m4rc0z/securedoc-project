@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, status
 from .config import settings
 # Facade Import (Simpler)
-from . import EmbedRequest, EmbedResponse, RAGRequest, RAGResponse, IngestRequest, IngestResponse, RerankRequest, RerankResponse, AIService
+from . import EmbedRequest, EmbedResponse, RAGRequest, RAGResponse, IngestRequest, IngestResponse, RerankRequest, RerankResponse, PlanRequest, PlanResponse, AIService
 
 logging.basicConfig(
     level=settings.log_level,
@@ -46,20 +46,36 @@ def create_embedding(request: EmbedRequest):
 @app.post("/ingest", response_model=IngestResponse, tags=["AI Capabilities"])
 def ingest_document(request: IngestRequest):
     try:
-        chunks = AIService.process_document(request.text, request.metadata)
-        return IngestResponse(chunks=chunks)
+        # 1. Extract metadata
+        extracted_meta = AIService.extract_metadata(request.text)
+        
+        # 2. Merge with request metadata (e.g. filename)
+        # Request metadata takes precedence for ID/Filename consistency if provided
+        final_doc_metadata = {**extracted_meta, **request.metadata}
+        
+        # 3. Process Chunks (Embed)
+        chunks = AIService.process_document(request.text, final_doc_metadata)
+        
+        return IngestResponse(document_metadata=final_doc_metadata, chunks=chunks)
     except Exception as e:
         logger.error(f"Ingest failed: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
 @app.post("/ask", response_model=RAGResponse, tags=["AI Capabilities"])
-def ask_llm(request: RAGRequest):
+@app.post("/ask", response_model=RAGResponse, tags=["AI Capabilities"])
+async def ask_llm(request: RAGRequest):
     try:
-        answer = AIService.ask_llm(request.question, request.context)
-        return RAGResponse(answer=answer)
+        response_data = await AIService.ask_llm(request.question, request.context)
+        
+        # Handle both dict (new) and string (legacy/fallback) returns
+        if isinstance(response_data, dict):
+            return RAGResponse(answer=response_data["answer"], sources=response_data.get("sources", []))
+        else:
+            return RAGResponse(answer=str(response_data), sources=[])
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="LLM service unavailable")
+        logger.error(f"Ask LLM failed: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 @app.post("/rerank", response_model=RerankResponse, tags=["AI Capabilities"])
 def rerank_documents(request: RerankRequest):
@@ -68,4 +84,26 @@ def rerank_documents(request: RerankRequest):
         return RerankResponse(results=results)
     except Exception as e:
         logger.error(f"Rerank failed: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+@app.post("/plan", response_model=PlanResponse, tags=["AI Capabilities"])
+def plan_query_endpoint(request: PlanRequest):
+    try:
+        plan = AIService.plan_query(request.question)
+        return PlanResponse(
+            original_question=plan.get("original_question", ""),
+            rewritten_question=plan.get("rewritten_question", ""),
+            intent=plan.get("intent", "SEARCH"),
+            filters=plan.get("filters", {})
+        )
+    except Exception as e:
+        logger.error(f"Plan query failed: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+@app.post("/reset", tags=["System"])
+def reset_system():
+    try:
+        result = AIService.reset_database()
+        return result
+    except Exception as e:
+        logger.error(f"System reset failed: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

@@ -7,6 +7,13 @@ export interface ChatResponse {
   sources: string[];
 }
 
+export interface Document {
+  id: string;
+  filename: string;
+  uploadDate: string;
+  metadata?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -19,6 +26,14 @@ export class ApiService {
     const formData = new FormData();
     formData.append('file', file);
     return this.http.post(`${this.apiUrl}/documents/upload`, formData);
+  }
+
+  getDocuments(): Observable<Document[]> {
+    return this.http.get<Document[]>(`${this.apiUrl}/documents`);
+  }
+
+  deleteDocument(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/documents/${id}`);
   }
 
   chat(question: string): Observable<ChatResponse> {

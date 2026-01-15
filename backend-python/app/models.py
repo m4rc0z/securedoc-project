@@ -9,10 +9,11 @@ class EmbedResponse(BaseModel):
 
 class RAGRequest(BaseModel):
     question: str = Field(..., min_length=1)
-    context: str = Field(..., min_length=1)
+    context: str = Field(default="", description="Retrieved context or empty string")
 
 class RAGResponse(BaseModel):
     answer: str
+    sources: List[str] = []
 
 class IngestRequest(BaseModel):
     text: str
@@ -24,6 +25,7 @@ class ChunkData(BaseModel):
     metadata: dict = {}
 
 class IngestResponse(BaseModel):
+    document_metadata: dict = {}
     chunks: List[ChunkData]
 
 class RerankRequest(BaseModel):
@@ -37,3 +39,12 @@ class ScoredDocument(BaseModel):
 
 class RerankResponse(BaseModel):
     results: List[ScoredDocument]
+
+class PlanRequest(BaseModel):
+    question: str = Field(..., min_length=1)
+
+class PlanResponse(BaseModel):
+    original_question: str
+    rewritten_question: str
+    intent: str
+    filters: dict = {}

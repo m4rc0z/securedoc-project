@@ -41,14 +41,15 @@ public class UploadControllerTest {
     @Test
     public void testUploadDocument_Success() throws IOException {
         // Arrange
-        MockMultipartFile file = new MockMultipartFile("file", "test.pdf", "application/pdf", "dummy content".getBytes());
+        MockMultipartFile file = new MockMultipartFile("file", "test.pdf", "application/pdf",
+                "dummy content".getBytes());
         String extractedText = "Extracted Text Content";
         when(pdfService.extractText(any())).thenReturn(extractedText);
 
         // Mock Ingest Response
         ChunkData chunk = new ChunkData("Extracted Text Content", List.of(0.1f, 0.2f, 0.3f), Map.of());
-        IngestResponse ingestResponse = new IngestResponse(List.of(chunk));
-        when(aiClient.ingest(eq(extractedText), anyMap())).thenReturn(ingestResponse);
+        var mockResponse = new AIServiceClient.IngestResponse(java.util.Map.of(), java.util.List.of(chunk));
+        when(aiClient.ingest(eq(extractedText), anyMap())).thenReturn(mockResponse);
 
         // Act
         ResponseEntity<Map<String, Object>> response = uploadController.uploadDocument(file);
@@ -57,7 +58,7 @@ public class UploadControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("success", response.getBody().get("status"));
         assertEquals(1, response.getBody().get("chunks_count"));
-        
+
         // Verify interactions
         verify(pdfService, times(1)).extractText(any());
         verify(aiClient, times(1)).ingest(eq(extractedText), anyMap());
