@@ -33,27 +33,46 @@ app = FastAPI(
 def health_check():
     return {"status": "ok", "config": {"model": settings.embedding_model_name, "ollama": settings.ollama_base_url}}
 
+@app.post("/embed-test")
+def embed_test(payload: dict):
+    logger.info(f"TEST PAYLOAD: {payload}")
+    return {"status": "ok", "payload": payload}
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    import traceback
+    logger.error(f"Global Exception: {exc}\n{traceback.format_exc()}")
+    return JSONResponse(
+        status_code=500,
+        content={"message": "Internal Server Error from Global Handler"},
+    )
+
+from fastapi.responses import JSONResponse
+
 @app.post("/embed", response_model=EmbedResponse, tags=["AI Capabilities"])
 def create_embedding(request: EmbedRequest):
     try:
+        logger.info(f"Embed request for text: {request.text[:50]}...")
         vector = AIService.get_embedding(request.text)
+        logger.info(f"Vector generated: {type(vector)}, Len: {len(vector) if vector else 'None'}")
         return EmbedResponse(embedding=vector)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
+        import traceback
+        logger.error(f"Stack trace: {traceback.format_exc()}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal processing error")
 
 @app.post("/ingest", response_model=IngestResponse, tags=["AI Capabilities"])
-def ingest_document(request: IngestRequest):
+async def ingest_document(request: IngestRequest):
     try:
-        # 1. Extract metadata
-        extracted_meta = AIService.extract_metadata(request.text)
+        # Metadata extraction
+        extracted_meta = await AIService.extract_metadata(request.text)
         
-        # 2. Merge with request metadata (e.g. filename)
-        # Request metadata takes precedence for ID/Filename consistency if provided
+        # Merge with request metadata, prioritizing request-provided values
         final_doc_metadata = {**extracted_meta, **request.metadata}
         
-        # 3. Process Chunks (Embed)
+        # Embed and store chunks
         chunks = AIService.process_document(request.text, final_doc_metadata)
         
         return IngestResponse(document_metadata=final_doc_metadata, chunks=chunks)

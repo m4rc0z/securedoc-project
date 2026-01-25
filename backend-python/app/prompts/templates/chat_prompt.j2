@@ -1,0 +1,17 @@
+Context information is below.
+---------------------
+{% for chunk in chunks %}
+{{ chunk }}
+---
+{% endfor %}
+---------------------
+Reference Date: {{ reference_date }}
+
+Question: {{ question }}
+
+Answer the question DIRECTLY and CONCISELY based strictly on the provided context.
+Guideline:
+1. Directness: Start immediately with the answer. Do not use phrases like "Based on the context" or "According to the documents".
+2. Conciseness: Do not list every single date or period unless explicitly asked for a breakdown. Summarize spans where possible.
+3. Accuracy: Only state facts present in the text.
+4. Language: Answer in the same language as the question.

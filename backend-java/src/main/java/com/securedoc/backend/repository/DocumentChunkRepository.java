@@ -19,6 +19,11 @@ public interface DocumentChunkRepository extends JpaRepository<DocumentChunk, Lo
     @Query(value = "SELECT content, source_file FROM document_chunks ORDER BY embedding <=> cast(?1 as vector) LIMIT ?2", nativeQuery = true)
     List<ChunkProjection> findNearest(String embedding, int limit);
 
+    // Hybrid Search: Full-Text Search using generated tsvector
+    // Uses plainto_tsquery for simple boolean logic (e.g. 'foo bar' -> 'foo & bar')
+    @Query(value = "SELECT content, source_file FROM document_chunks WHERE search_vector @@ plainto_tsquery('english', ?1) ORDER BY ts_rank(search_vector, plainto_tsquery('english', ?1)) DESC LIMIT ?2", nativeQuery = true)
+    List<ChunkProjection> findNearestKeyword(String query, int limit);
+
     @Modifying
     @Transactional
     @Query(value = "INSERT INTO document_chunks (content, source_file, embedding, document_id) VALUES (?1, ?2, cast(?3 as vector), ?4)", nativeQuery = true)

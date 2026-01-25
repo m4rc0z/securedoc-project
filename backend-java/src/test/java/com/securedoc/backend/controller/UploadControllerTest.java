@@ -4,6 +4,7 @@ import com.securedoc.backend.client.AIServiceClient;
 import com.securedoc.backend.client.AIServiceClient.IngestResponse; // Assuming this DTO exists based on controller usage
 import com.securedoc.backend.client.AIServiceClient.ChunkData; // Assuming this inner DTO exists
 import com.securedoc.backend.repository.DocumentChunkRepository;
+import com.securedoc.backend.service.IngestionService;
 import com.securedoc.backend.service.PdfService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,13 +28,7 @@ import static org.mockito.Mockito.*;
 public class UploadControllerTest {
 
     @Mock
-    private PdfService pdfService;
-
-    @Mock
-    private AIServiceClient aiClient;
-
-    @Mock
-    private DocumentChunkRepository chunkRepository;
+    private IngestionService ingestionService;
 
     @InjectMocks
     private UploadController uploadController;
@@ -43,25 +38,17 @@ public class UploadControllerTest {
         // Arrange
         MockMultipartFile file = new MockMultipartFile("file", "test.pdf", "application/pdf",
                 "dummy content".getBytes());
-        String extractedText = "Extracted Text Content";
-        when(pdfService.extractText(any())).thenReturn(extractedText);
 
-        // Mock Ingest Response
-        ChunkData chunk = new ChunkData("Extracted Text Content", List.of(0.1f, 0.2f, 0.3f), Map.of());
-        var mockResponse = new AIServiceClient.IngestResponse(java.util.Map.of(), java.util.List.of(chunk));
-        when(aiClient.ingest(eq(extractedText), anyMap())).thenReturn(mockResponse);
+        doNothing().when(ingestionService).processDocument(any());
 
         // Act
         ResponseEntity<Map<String, Object>> response = uploadController.uploadDocument(file);
 
         // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("success", response.getBody().get("status"));
-        assertEquals(1, response.getBody().get("chunks_count"));
+        assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
+        assertEquals("processing_started", response.getBody().get("status"));
 
         // Verify interactions
-        verify(pdfService, times(1)).extractText(any());
-        verify(aiClient, times(1)).ingest(eq(extractedText), anyMap());
-        verify(chunkRepository, times(1)).saveAll(anyList());
+        verify(ingestionService, times(1)).processDocument(any());
     }
 }

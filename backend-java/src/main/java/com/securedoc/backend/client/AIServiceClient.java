@@ -67,6 +67,16 @@ public class AIServiceClient {
                 .body(PlanResponse.class);
     }
 
+    public RerankResponse rerank(String query, List<String> documents) {
+        // top_k=5 hardcoded as per plan, or parameterize if needed
+        return restClient.post()
+                .uri("/rerank")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new RerankRequest(query, documents, 5))
+                .retrieve()
+                .body(RerankResponse.class);
+    }
+
     // DTOs
     public record IngestRequest(String text, Map<String, Object> metadata) {
     }
@@ -89,7 +99,7 @@ public class AIServiceClient {
     public record RAGRequest(String question, String context) {
     }
 
-    public record RAGResponse(String answer) {
+    public record RAGResponse(String answer, List<String> sources) {
     }
 
     public record IngestResponse(@JsonProperty("document_metadata") Map<String, Object> documentMetadata,
@@ -117,5 +127,14 @@ public class AIServiceClient {
             @JsonProperty("rewritten_question") String rewrittenQuestion,
             String intent,
             Map<String, Object> filters) {
+    }
+
+    public record RerankRequest(String query, List<String> documents, @JsonProperty("top_k") int topK) {
+    }
+
+    public record RerankResponse(List<RerankResult> results) {
+    }
+
+    public record RerankResult(String content, double score) {
     }
 }

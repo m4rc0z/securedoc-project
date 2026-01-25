@@ -10,8 +10,8 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from .config import settings
 from .rag.factory import RAGFactory
 from .rag.ingestion import IngestionService
-from .rag.retrieval import RetrievalService
 from llama_index.core.schema import NodeWithScore, TextNode
+from .prompts.manager import PromptManager
 
 logger = logging.getLogger("ai_service")
 
@@ -25,7 +25,7 @@ class AIService:
         # Accessing singletons triggers initialization
         RAGFactory.get_embedding_model()
         RAGFactory.get_llm()
-        RAGFactory.get_index()
+        # RAGFactory.get_index() removed (Retrieval is handled by Java)
         logger.info("RAG Factory initialized successfully.")
 
     @classmethod
@@ -63,24 +63,13 @@ class AIService:
                 logger.info("Using provided context for generation.")
                 llm = RAGFactory.get_llm()
                 
-                # Context Injection: Current Date for relative time resolution
+                # Add current date for relative time understanding
                 import datetime
                 today_str = datetime.date.today().strftime("%Y-%m-%d")
                 
-                prompt = (
-                    "Context information is below.\n"
-                    "---------------------\n"
-                    f"{context}\n"
-                    "---------------------\n"
-                    f"Reference Date: {today_str}\n\n"
-                    f"Question: {question}\n\n"
-                    "Answer the question based strictly on the provided context.\n"
-                    "Guideline: Provide a DETAILED and COMPREHENSIVE answer based on the context.\n"
-                    "1. Specificity: Include relevant details, technologies, and responsibilities. Avoid generic summaries.\n"
-                    "2. Relevance: Include dates, durations, or metrics ONLY if they explicitly answer the question. Avoid irrelevant headers.\n"
-                    "3. Calculation: If a timeline/duration is requested, calculate it explicitly using the Reference Date.\n"
-                    "4. Language: Answer in the same language as the question (e.g. German for German questions)."
-                )
+                # Reconstruct chunks list for the PromptManager
+                chunks = context.split("\n---\n")
+                prompt = PromptManager.get_chat_prompt(chunks, question, today_str)
                 response = llm.complete(prompt)
                 response_text = response.text
                 
@@ -89,18 +78,11 @@ class AIService:
                     "sources": ["Provided Context"]
                 }
 
-            # Fallback to internal Retrieval if no context provided
-            query_engine = RetrievalService.get_query_engine()
-            
-            try:
-                # Latency Budgeting: 60s timeout for local inference
-                response = await asyncio.wait_for(query_engine.aquery(question), timeout=60.0)
-            except asyncio.TimeoutError:
-                logger.warning("Query timed out after 60s.")
-                return {
-                    "answer": "I'm sorry, I couldn't search the documents fast enough. Please try a simpler query.",
-                    "sources": ["System: Timeout"]
-                }
+            # Fallback for no context: Just warn the user that context is required
+            return {
+                "answer": "I can only answer questions based on selected documents. Please ensure the system has retrieved relevant documents.",
+                "sources": []
+            }
             
             # Extract Sources
             sources = []
@@ -138,7 +120,7 @@ class AIService:
             raise e
     
     @classmethod
-    def extract_metadata(cls, text: str) -> dict:
+    async def extract_metadata(cls, text: str) -> dict:
         """
         Extracts metadata using the LLM.
         """
@@ -161,7 +143,10 @@ class AIService:
             Document Text:
             {text[:4000]}
             """
-            response = llm.complete(prompt_str)
+            
+            # Async extraction with timeout
+            import asyncio
+            response = await asyncio.wait_for(llm.acomplete(prompt_str), timeout=30.0)
             
             # JSON extraction
             json_str = response.text
@@ -169,6 +154,9 @@ class AIService:
             if match:
                 return json.loads(match.group(0))
             return {}
+        except asyncio.TimeoutError:
+            logger.error("Metadata extraction timed out.")
+            return {"document_type": "Unknown", "error": "Timeout"}
         except Exception as e:
             logger.error(f"Metadata extraction failed: {e}")
             return {"document_type": "Unknown", "error": str(e)}
@@ -196,26 +184,10 @@ class AIService:
         }
 
     @classmethod
-    def reset_database(cls) -> Dict[str, str]:
+    async def reset_database(cls):
         """
-        Clears the Vector Database.
+        Resets the database. 
+        In this architecture, vector data is managed by Postgres (Java).
         """
-        try:
-            logger.info("Resetting Database...")
-            client = RAGFactory.get_qdrant_client()
-            collection_name = "securedoc_collection"
-            
-            client.delete_collection(collection_name=collection_name)
-            
-            # Recreate collection immediately
-            from qdrant_client.http import models
-            client.create_collection(
-                collection_name=collection_name,
-                vectors_config=models.VectorParams(size=384, distance=models.Distance.COSINE)
-            )
-            
-            logger.info(f"Collection {collection_name} cleared.")
-            return {"status": "success", "message": f"Collection {collection_name} cleared."}
-        except Exception as e:
-            logger.error(f"Reset failed: {e}")
-            raise e
+        logger.info("Reset database request received. (Handled by Postgres/Java)")
+        return {"status": "success", "message": "Database reset not supported in Python service."}

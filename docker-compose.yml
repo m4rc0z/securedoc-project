@@ -22,18 +22,6 @@ services:
       - securedoc-network
     restart: unless-stopped
 
-  # 3. Vector Database (Qdrant)
-  qdrant:
-    image: qdrant/qdrant:latest
-    container_name: securedoc-qdrant
-    ports:
-      - "6333:6333"
-    volumes:
-      - qdrant_data:/qdrant/storage
-    networks:
-      - securedoc-network
-    restart: unless-stopped
-
   # 4. Database Admin Tool
   pgadmin:
     image: dpage/pgadmin4
@@ -77,13 +65,24 @@ services:
       - OLLAMA_BASE_URL=http://host.docker.internal:11434
     depends_on:
       - db
-      - qdrant
     networks:
       - securedoc-network
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
+  # 6. LLM Provider (Ollama) - DISABLED
+  # Running natively on Mac for GPU acceleration (M-series chips)
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: securedoc-ollama
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   networks:
+  #     - securedoc-network
+  #   restart: unless-stopped
 
 volumes:
   postgres_data:
-  qdrant_data:
+  ollama_data:

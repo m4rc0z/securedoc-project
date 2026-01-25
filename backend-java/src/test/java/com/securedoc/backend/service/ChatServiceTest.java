@@ -38,10 +38,23 @@ public class ChatServiceTest {
         String question = "What is the secret?";
         ChatRequest request = new ChatRequest(question, null);
 
+        // Mock Plan
+        com.securedoc.backend.client.AIServiceClient.PlanResponse planResponse = new com.securedoc.backend.client.AIServiceClient.PlanResponse(
+                question, question, "SEARCH", new java.util.HashMap<>());
+        when(aiClient.plan(question)).thenReturn(planResponse);
+
         // Mock Embedding
         List<Float> embedding = List.of(0.1f, 0.2f, 0.3f);
         EmbedResponse embedResponse = new EmbedResponse(embedding);
         when(aiClient.embed(question)).thenReturn(embedResponse);
+
+        // Mock Rerank
+        List<String> docs = List.of("Secret 1", "Secret 2");
+        com.securedoc.backend.client.AIServiceClient.RerankResponse rerankRes = new com.securedoc.backend.client.AIServiceClient.RerankResponse(
+                List.of(
+                        new com.securedoc.backend.client.AIServiceClient.RerankResult("Secret 1", 0.9),
+                        new com.securedoc.backend.client.AIServiceClient.RerankResult("Secret 2", 0.8)));
+        when(aiClient.rerank(eq(question), anyList())).thenReturn(rerankRes);
 
         // Mock Chunk Retrieval
         ChunkProjection p1 = mock(ChunkProjection.class);
@@ -49,11 +62,11 @@ public class ChatServiceTest {
         ChunkProjection p2 = mock(ChunkProjection.class);
         when(p2.getContent()).thenReturn("Secret 2");
 
-        when(chunkRepository.findNearest(anyString(), eq(5))).thenReturn(List.of(p1, p2));
+        when(chunkRepository.findNearest(anyString(), eq(15))).thenReturn(List.of(p1, p2));
 
         // Mock LLM Response
         String expectedAnswer = "The secret is 42.";
-        RAGResponse ragResponse = new RAGResponse(expectedAnswer);
+        RAGResponse ragResponse = new RAGResponse(expectedAnswer, List.of("source1"));
         when(aiClient.ask(eq(question), anyString())).thenReturn(ragResponse);
 
         // Act

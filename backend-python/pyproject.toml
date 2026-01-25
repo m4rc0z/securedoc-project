@@ -1,0 +1,40 @@
+[tool.poetry]
+name = "securedoc-backend"
+version = "0.1.0"
+description = "SecureDoc Intelligence Backend Service"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{include = "app"}]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.13"
+fastapi = "*"
+uvicorn = "*"
+python-dotenv = "*"
+langchain = "*"
+langchain-community = "*"
+langchain-core = "*"
+sentence-transformers = "*"
+sqlalchemy = "*"
+tenacity = "*"
+torch = "*"
+transformers = "*"
+llama-index = "*"
+llama-index-core = "*"
+llama-index-llms-ollama = "*"
+llama-index-embeddings-huggingface = "*"
+
+flashrank = "*"
+llmlingua = "*"
+fastembed = "*"
+llama-index-readers-docling = "*"
+psycopg2-binary = "*"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+pytest-mock = "*"
+pytest-asyncio = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
