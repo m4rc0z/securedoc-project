@@ -33,10 +33,7 @@ app = FastAPI(
 def health_check():
     return {"status": "ok", "config": {"model": settings.embedding_model_name, "ollama": settings.ollama_base_url}}
 
-@app.post("/embed-test")
-def embed_test(payload: dict):
-    logger.info(f"TEST PAYLOAD: {payload}")
-    return {"status": "ok", "payload": payload}
+
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
@@ -51,6 +48,8 @@ from fastapi.responses import JSONResponse
 
 @app.post("/embed", response_model=EmbedResponse, tags=["AI Capabilities"])
 def create_embedding(request: EmbedRequest):
+    # CPU-bound operation: defined as sync 'def' so FastAPI runs it in a separate threadpool.
+    # If this were 'async def', it would block the main event loop during calculation.
     try:
         logger.info(f"Embed request for text: {request.text[:50]}...")
         vector = AIService.get_embedding(request.text)
@@ -81,7 +80,6 @@ async def ingest_document(request: IngestRequest):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@app.post("/ask", response_model=RAGResponse, tags=["AI Capabilities"])
 @app.post("/ask", response_model=RAGResponse, tags=["AI Capabilities"])
 async def ask_llm(request: RAGRequest):
     try:
