@@ -104,7 +104,10 @@ class AIService:
     @classmethod
     def rerank(cls, query: str, documents: List[str], top_k: int = 5) -> List[Dict]:
         """
-        Optional reranking step.
+        [PLACEHOLDER] Future Reranking Step
+        
+        TODO: Implement a Cross-Encoder (e.g. BGE-Reranker) here.
+        Currently, this method just mocks the scoring but keeps the architecture ready.
         """
         try:
             # Returning top_k results as-is to minimize latency
@@ -177,7 +180,7 @@ class AIService:
     @classmethod
     def plan_query(cls, question: str) -> Dict[str, Any]:
         """
-        [PLACEHOLDER] Future Reasoning Engine
+        TODO: Future Reasoning Engine
         
         This method uses an LLM to analyze the question before searching.
         
