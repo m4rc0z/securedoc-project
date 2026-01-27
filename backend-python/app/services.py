@@ -177,16 +177,15 @@ class AIService:
     @classmethod
     def plan_query(cls, question: str) -> Dict[str, Any]:
         """
-        [PLACEHOLDER] Future "Reasoning Engine" (The Brain) 🧠
+        [PLACEHOLDER] Future Reasoning Engine
         
-        This method will use an LLM to "think" before searching.
+        This method uses an LLM to analyze the question before searching.
         
-        It will do 3 smart things:
-        1. Query Decomposition: Split big questions into small steps.
-           (e.g. "Compare revenue 2022 vs 2023" -> "Search 2022", "Search 2023")
-        2. Query Rewriting: Make the question clearer for the database.
-           (e.g. "How do I install it?" -> "Installation instructions for Docker")
-        3. Tool Routing: Decide if we need to Search, Send Email, or Calculate.
+        It performs two main tasks:
+        1. Query Decomposition: Breaks complex questions into smaller parts.
+           (Example: "Compare 2022 and 2023" -> "Search 2022", "Search 2023")
+        2. Query Rewriting: Clarifies the question for better search results.
+           (Example: "How do I install it?" -> "Installation instructions for Docker")
         """
         return {
             "original_question": question,
