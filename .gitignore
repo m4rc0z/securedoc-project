@@ -33,3 +33,4 @@ postgres_data/
 ollama_data/
 pdfs/
 vector.txt
+dummy_upload.txt
