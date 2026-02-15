@@ -1,11 +1,6 @@
 package com.securedoc.backend.controller;
 
-import com.securedoc.backend.client.AIServiceClient;
-import com.securedoc.backend.client.AIServiceClient.IngestResponse; // Assuming this DTO exists based on controller usage
-import com.securedoc.backend.client.AIServiceClient.ChunkData; // Assuming this inner DTO exists
-import com.securedoc.backend.repository.DocumentChunkRepository;
 import com.securedoc.backend.service.IngestionService;
-import com.securedoc.backend.service.PdfService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,12 +11,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,7 +33,9 @@ public class UploadControllerTest {
         MockMultipartFile file = new MockMultipartFile("file", "test.pdf", "application/pdf",
                 "dummy content".getBytes());
 
-        doNothing().when(ingestionService).processDocument(any());
+        // Mock the new signature: processDocument(String filePath, String
+        // originalFilename)
+        doNothing().when(ingestionService).processDocument(anyString(), anyString());
 
         // Act
         ResponseEntity<Map<String, Object>> response = uploadController.uploadDocument(file);
@@ -47,8 +43,9 @@ public class UploadControllerTest {
         // Assert
         assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
         assertEquals("processing_started", response.getBody().get("status"));
+        assertEquals("test.pdf", response.getBody().get("filename"));
 
-        // Verify interactions
-        verify(ingestionService, times(1)).processDocument(any());
+        // Verify interactions - now expects two String arguments
+        verify(ingestionService, times(1)).processDocument(anyString(), eq("test.pdf"));
     }
 }
