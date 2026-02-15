@@ -11,6 +11,8 @@ export interface Document {
   id: string;
   filename: string;
   uploadDate: string;
+  status: 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  errorMessage?: string;
   metadata?: string;
 }
 

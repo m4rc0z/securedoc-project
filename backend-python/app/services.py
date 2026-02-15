@@ -4,9 +4,9 @@ import re
 import json
 import asyncio
 
-
 from tenacity import retry, stop_after_attempt, wait_exponential
 
+from sentence_transformers import CrossEncoder
 from .config import settings
 from .rag.factory import RAGFactory
 from .rag.ingestion import IngestionService
@@ -16,6 +16,14 @@ from .prompts.manager import PromptManager
 logger = logging.getLogger("ai_service")
 
 class AIService:
+    _reranker = None
+
+    @classmethod
+    def _get_reranker(cls):
+        if(cls._reranker == None):
+            cls._reranker = CrossEncoder("BAAI/bge-reranker-base")
+        return cls._reranker
+
     @classmethod
     def initialize(cls):
         """
@@ -106,21 +114,43 @@ class AIService:
         """
         [PLACEHOLDER] Future Reranking Step
         
-        TODO: Implement a Cross-Encoder (e.g. BGE-Reranker) here.
+        TODO: Implement a Cross-Encoder here.
         Currently, this method just mocks the scoring but keeps the architecture ready.
         """
         try:
-            # Returning top_k results as-is to minimize latency
-            results = []
-            for i, doc in enumerate(documents[:top_k]):
-                results.append({
+            # 1. Check if we have documents to rerank
+            if not documents:
+                return []
+                
+            # 2. Lazy load the Model
+            reranker = cls._get_reranker()
+            
+            # 3. Predict Scores (Vectorized)
+            pairs = [[query, doc] for doc in documents]
+            scores = reranker.predict(pairs)
+            
+            # 4. Combine and Sort
+            # Zip returns an iterator of tuples (doc, score)
+            ranked_results = []
+            for doc, score in zip(documents, scores):
+                ranked_results.append({
                     "content": doc,
-                    "score": 1.0 - (i * 0.01) 
+                    "score": float(score)  # Convert numpy float to python float
                 })
-            return results
+            
+            # Sort by score descending
+            ranked_results.sort(key=lambda x: x["score"], reverse=True)
+            
+            # 5. Return Top K
+            return ranked_results[:top_k]
+            
         except Exception as e:
             logger.error(f"Reranking failed: {e}")
-            raise e
+            # Fallback: Just return original documents with fake scores so the flow doesn't break
+            fallback = []
+            for i, doc in enumerate(documents[:top_k]):
+                fallback.append({"content": doc, "score": 0.5})
+            return fallback
     
     @classmethod
     async def extract_metadata(cls, text: str) -> dict:
@@ -170,7 +200,6 @@ class AIService:
         Generates an embedding vector for the given text.
         """
         try:
-            # logger.info("Generating embedding...") # Verbose logging removed
             embed_model = RAGFactory.get_embedding_model()
             return embed_model.get_text_embedding(text)
         except Exception as e:
@@ -181,14 +210,7 @@ class AIService:
     def plan_query(cls, question: str) -> Dict[str, Any]:
         """
         TODO: Future Reasoning Engine
-        
-        This method uses an LLM to analyze the question before searching.
-        
-        It performs two main tasks:
-        1. Query Decomposition: Breaks complex questions into smaller parts.
-           (Example: "Compare 2022 and 2023" -> "Search 2022", "Search 2023")
-        2. Query Rewriting: Clarifies the question for better search results.
-           (Example: "How do I install it?" -> "Installation instructions for Docker")
+        For now, just return the original question.
         """
         return {
             "original_question": question,

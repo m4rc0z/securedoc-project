@@ -12,7 +12,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "documents")
 @Data
-@Builder
+@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 public class Document {
@@ -28,4 +28,16 @@ public class Document {
     @Column(columnDefinition = "jsonb")
     @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     private String metadata;
+
+    @Lob
+    @Basic(fetch = FetchType.LAZY)
+    @Column(name = "content")
+    private byte[] content;
+
+    @Column(name = "status")
+    private FileStatus status;
+
+    @Column(name = "errorMessage")
+    private String errorMessage;
+    
 }

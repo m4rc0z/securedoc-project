@@ -1,4 +1,6 @@
 import logging
+import asyncio
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, status
@@ -47,12 +49,12 @@ async def global_exception_handler(request, exc):
 from fastapi.responses import JSONResponse
 
 @app.post("/embed", response_model=EmbedResponse, tags=["AI Capabilities"])
-def create_embedding(request: EmbedRequest):
-    # CPU-bound operation: defined as sync 'def' so FastAPI runs it in a separate threadpool.
-    # If this were 'async def', it would block the main event loop during calculation.
+async def create_embedding(request: EmbedRequest):
+    # CPU-bound operation: 
+    # explicit async + to_thread is cleaner then using FastAPI's default threadpool.
     try:
         logger.info(f"Embed request for text: {request.text[:50]}...")
-        vector = AIService.get_embedding(request.text)
+        vector = await asyncio.to_thread(AIService.get_embedding, request.text)
         logger.info(f"Vector generated: {type(vector)}, Len: {len(vector) if vector else 'None'}")
         return EmbedResponse(embedding=vector)
     except ValueError as e:
@@ -72,7 +74,7 @@ async def ingest_document(request: IngestRequest):
         final_doc_metadata = {**extracted_meta, **request.metadata}
         
         # Embed and store chunks
-        chunks = AIService.process_document(request.text, final_doc_metadata)
+        chunks = await asyncio.to_thread(AIService.process_document, request.text, final_doc_metadata)
         
         return IngestResponse(document_metadata=final_doc_metadata, chunks=chunks)
     except Exception as e:
@@ -95,9 +97,9 @@ async def ask_llm(request: RAGRequest):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 @app.post("/rerank", response_model=RerankResponse, tags=["AI Capabilities"])
-def rerank_documents(request: RerankRequest):
+async def rerank_documents(request: RerankRequest):
     try:
-        results = AIService.rerank(request.query, request.documents, request.top_k)
+        results = await asyncio.to_thread(AIService.rerank, request.query, request.documents, request.top_k)
         return RerankResponse(results=results)
     except Exception as e:
         logger.error(f"Rerank failed: {e}")
